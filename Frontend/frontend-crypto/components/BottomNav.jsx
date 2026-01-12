@@ -1,15 +1,41 @@
-import "./bottomnav.css"
+import { NavLink } from "react-router-dom";
+import "./bottomnav.css";
 
 const BottomNav = () => {
   return (
     <nav className="bottom-nav">
-      <span className="active">🏠<p>Beranda</p></span>
-      <span>📈<p>Simulasi</p></span>
-      <span>📘<p>Belajar</p></span>
-      <span>👥<p>Komunitas</p></span>
-      <span>🤖<p>AI Mentor</p></span>
-    </nav>
-  )
-}
+      <NavLink
+        to="/dashboard"
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        🏠
+        <p>Beranda</p>
+      </NavLink>
 
-export default BottomNav
+      <NavLink
+        to="/simulasi"
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        📈
+        <p>Simulasi</p>
+      </NavLink>
+
+      <NavLink to="/belajar">
+        📘
+        <p>Belajar</p>
+      </NavLink>
+
+      <NavLink to="/komunitas">
+        👥
+        <p>Komunitas</p>
+      </NavLink>
+
+      <NavLink to="/ai-mentor">
+        🤖
+        <p>AI Mentor</p>
+      </NavLink>
+    </nav>
+  );
+};
+
+export default BottomNav;
