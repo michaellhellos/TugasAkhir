@@ -14,6 +14,7 @@ const AIMentor = () => {
       const result = await askGemini(question);
       setAnswer(result);
     } catch (error) {
+      console.error(error)
       setAnswer("Terjadi kesalahan saat memanggil AI");
     } finally {
       setLoading(false);
