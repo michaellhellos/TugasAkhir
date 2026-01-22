@@ -1,57 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import type { CryptoCoin, Portfolio, Transaction } from '../types';
+import React, { useState } from 'react';
+import type { CryptoCoin} from '../types';
 import {
   LineChart,
   Line,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  type TooltipProps,
+  
 } from 'recharts';
-import {
-  PencilIcon,
-  SquareIcon,
-  TrashIcon,
-  CursorArrowIcon,
-} from './Icons';
-
-/* ===================== TYPES ===================== */
+/* ===================== PROPS ===================== */
 
 interface TradingSimulatorProps {
   marketData: CryptoCoin[];
-  portfolio: Portfolio;
-  onTrade: (
-    coinId: string,
-    amountUSD: number,
-    tradeType: 'buy' | 'sell'
-  ) => void;
   initialCoin: CryptoCoin | null;
-  transactions: Transaction[];
 }
 
-type Tool = 'cursor' | 'line' | 'rect';
-
-type DrawingShape =
-  | {
-      id: string;
-      type: 'line';
-      x1: number;
-      y1: number;
-      x2: number;
-      y2: number;
-      color: string;
-    }
-  | {
-      id: string;
-      type: 'rect';
-      x: number;
-      y: number;
-      w: number;
-      h: number;
-      color: string;
-    };
-
-/* ===================== HELPERS ===================== */
+/* ===================== HELPER ===================== */
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('en-US', {
@@ -61,8 +25,9 @@ const formatCurrency = (value: number) =>
   }).format(value);
 
 /* ===================== TOOLTIP ===================== */
+/* Pakai any → aman dari error typing recharts */
 
-const CustomTooltip: React.FC<TooltipProps<number, string>> = ({
+const CustomTooltip: React.FC = ({
   active,
   payload,
 }) => {
@@ -82,123 +47,28 @@ const CustomTooltip: React.FC<TooltipProps<number, string>> = ({
 
 const TradingSimulator: React.FC<TradingSimulatorProps> = ({
   marketData,
-  portfolio,
-  onTrade,
   initialCoin,
-  transactions,
 }) => {
-  const [selectedCoin, setSelectedCoin] = useState<CryptoCoin | null>(
-    initialCoin ?? marketData[0]
+  const [selectedCoin] = useState<CryptoCoin | null>(
+    initialCoin ?? marketData[0] ?? null
   );
-  const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
-  const [amountUSD, setAmountUSD] = useState('100');
-  const [amountCrypto, setAmountCrypto] = useState('');
-  const [activeTab, setActiveTab] = useState<'trade' | 'history'>('trade');
 
-  /* Drawing */
-  const [tool, setTool] = useState<Tool>('cursor');
-  const [drawings, setDrawings] = useState<DrawingShape[]>([]);
-  const [currentDrawing, setCurrentDrawing] =
-    useState<DrawingShape | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  /* ===================== EFFECTS ===================== */
-
-  useEffect(() => {
-    if (!initialCoin) return;
-    setSelectedCoin(initialCoin);
-    setDrawings([]);
-  }, [initialCoin?.id]);
-
-  useEffect(() => {
-    if (!selectedCoin) return;
-    const usd = parseFloat(amountUSD);
-    setAmountCrypto(
-      !isNaN(usd) && usd > 0
-        ? (usd / selectedCoin.price).toFixed(8)
-        : ''
+  if (!selectedCoin) {
+    return (
+      <p className="text-gray-400">
+        Data koin tidak tersedia.
+      </p>
     );
-  }, [amountUSD, selectedCoin?.price]);
+  }
 
-  /* ===================== DRAWING ===================== */
-
-  const getCoords = (e: React.MouseEvent) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return { x: 0, y: 0 };
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (tool === 'cursor') return;
-    const { x, y } = getCoords(e);
-    setIsDrawing(true);
-
-    setCurrentDrawing(
-      tool === 'line'
-        ? {
-            id: Date.now().toString(),
-            type: 'line',
-            x1: x,
-            y1: y,
-            x2: x,
-            y2: y,
-            color: '#FCD34D',
-          }
-        : {
-            id: Date.now().toString(),
-            type: 'rect',
-            x,
-            y,
-            w: 0,
-            h: 0,
-            color: '#60A5FA',
-          }
-    );
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDrawing || !currentDrawing) return;
-    const { x, y } = getCoords(e);
-
-    setCurrentDrawing((prev) =>
-      !prev
-        ? null
-        : prev.type === 'line'
-        ? { ...prev, x2: x, y2: y }
-        : { ...prev, w: x - prev.x, h: y - prev.y }
-    );
-  };
-
-  const handleMouseUp = () => {
-    if (isDrawing && currentDrawing) {
-      setDrawings((prev) => [...prev, currentDrawing]);
-    }
-    setCurrentDrawing(null);
-    setIsDrawing(false);
-  };
-
-  /* ===================== UI ===================== */
-
-  if (!selectedCoin)
-    return <p className="text-gray-400">Pilih koin terlebih dahulu.</p>;
-
-  const chartData = selectedCoin.sparkline.map((price, i) => ({
-    name: i,
+  const chartData = selectedCoin.sparkline.map((price, index) => ({
+    index,
     price,
   }));
 
   return (
-    <div className="bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg space-y-6">
-      {/* Chart */}
-      <div
-        ref={containerRef}
-        className="h-72 relative"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
+    <div className="bg-gray-800 rounded-xl p-4 shadow-lg">
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
             <YAxis hide />
@@ -207,7 +77,9 @@ const TradingSimulator: React.FC<TradingSimulatorProps> = ({
               type="monotone"
               dataKey="price"
               stroke={
-                selectedCoin.change24h >= 0 ? '#4ade80' : '#f87171'
+                selectedCoin.change24h >= 0
+                  ? '#4ade80'
+                  : '#f87171'
               }
               dot={false}
             />
